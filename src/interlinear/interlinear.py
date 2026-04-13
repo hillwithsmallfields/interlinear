@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
+import pprint
 
 from expressionive.expressionive import htmltags as T
-from orgbookchapterverse.orgbookchapterverse import TextCollection, interlinear_chapter
+from orgbookchapterverse.orgbookchapterverse import TextCollection, interlinear_chapters
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -11,7 +13,8 @@ def get_args():
     parser.add_argument("--chapter", "-c")
     parser.add_argument("--verse", "-v")
     parser.add_argument("--language", "-l", action='append')
-    parser.add_argument("reference")
+    parser.add_argument("--format", "-f", default="html")
+    # parser.add_argument("reference", action='append')
     return vars(parser.parse_args())
 
 def emphasize_word(text):
@@ -75,6 +78,7 @@ def chapters_interlinear_html(versions, chapters, heading=T.h2):
     return [[heading[chapter], chapter_interlinear_html(versions, chapter)]
             for chapter in chapters]
 
+# Map language names (in their own languages and in English) to filenames:
 VERSION_FILES = {
     "albanian": "al",
     "deutsch": "de",
@@ -94,6 +98,7 @@ VERSION_FILES = {
     "nederlands": "nl",
     "norsk": "no",
     "norwegian": "no",
+    "polish": "pl",
     "polska": "pl",
     "portuguese": "po",
     "português": "po",
@@ -119,16 +124,28 @@ NORMALISED_NAMES = {
     "Psalm": "Psalms",
 }
 
-def bible_main(book, chapter, verse, language, reference):
+def chapter_range(chapters):
+    start, end = chapters.split('-')
+    return list(range(int(start), int(end)+1))
+
+def bible_main(book, chapter, verse,
+               language,
+               format,
+               # reference
+               ):
     book = NORMALISED_NAMES.get(book, book)
-    chapters = (["%s %d" % (book, i) for i in range(*chapter.split("-"))]
+    chapters = (chapter_range(chapter)
                 if "-" in chapter
-                else ["%s %d" % (book, chapter)])
-    print("chapters are", chapters)
+                else [int(chapter)])
     versions = [
         TextCollection(os.path.expandvars("$BIBLE/%s.org" % VERSION_FILES[version.lower()]), version)
         for version in language
     ]
-    # chapters_interlinear_html(versions,
-    #                           chapters
-    #                           )
+
+    texts = interlinear_chapters(versions, book, chapters)
+
+    print("texts are:")
+    pprint.pp(texts, width=264)
+
+if __name__ == "__main__":
+    bible_main(**get_args())
