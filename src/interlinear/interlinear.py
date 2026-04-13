@@ -2,9 +2,9 @@
 
 import argparse
 import os
-import pprint
 
 from expressionive.expressionive import htmltags as T
+import expressionive.exprpages as exprpages
 from orgbookchapterverse.orgbookchapterverse import TextCollection, interlinear_chapters
 
 def get_args():
@@ -13,6 +13,7 @@ def get_args():
     parser.add_argument("--chapter", "-c")
     parser.add_argument("--verse", "-v")
     parser.add_argument("--language", "-l", action='append')
+    parser.add_argument("--output", "-o")
     parser.add_argument("--format", "-f", default="html")
     # parser.add_argument("reference", action='append')
     return vars(parser.parse_args())
@@ -128,11 +129,52 @@ def chapter_range(chapters):
     start, end = chapters.split('-')
     return list(range(int(start), int(end)+1))
 
+def chapter_interlinear_html(chapter_contents):
+    """Return the expressionive structure for an interlinear text."""
+    return T.table(class_="interlinear_chapter")[
+        [[T.tr[[T.th(class_="verse_number")[str(vnumber)],
+                [[T.td(class_=("verse_text_%d" % colno))[emphasize_word(text)]
+                  for colno, text in enumerate(verse)]]
+                ]]]
+         for vnumber, verse in enumerate(
+                 chapter_contents,
+                 start=1)]]
+
+def chapters_interlinear_html(chapters):
+    """Return the expressionive structure for a list of Bible chapters."""
+    return [[T.h3[chapter_number], chapter_interlinear_html(chapter_contents)]
+            for chapter_number, chapter_contents in chapters]
+
+def interlinear_html(data, filename):
+    """Output the text as HTML."""
+    with open(filename, 'w') as hstream:
+        hstream.write(
+            exprpages.page_text(
+                T.div(class_='bible')[
+                    chapters_interlinear_html(data)
+                ],
+                title="Bible",
+                style_text="",
+                script_text=""))
+
+def interlinear_json(data, filename):
+    """Output the text as JSON."""
+    with open(filename, 'w') as jstream:
+        json.dump(data, jstream)
+
+CONVERTERS = {
+    'html': interlinear_html,
+    'json': interlinear_json,
+}
+
 def bible_main(book, chapter, verse,
                language,
+               output,
                format,
                # reference
                ):
+    if format not in CONVERTERS:
+        raise ValueError("Format %s not supported" % format)
     book = NORMALISED_NAMES.get(book, book)
     chapters = (chapter_range(chapter)
                 if "-" in chapter
@@ -144,8 +186,7 @@ def bible_main(book, chapter, verse,
 
     texts = interlinear_chapters(versions, book, chapters)
 
-    print("texts are:")
-    pprint.pp(texts, width=264)
+    CONVERTERS[format](texts, output)
 
 if __name__ == "__main__":
     bible_main(**get_args())
