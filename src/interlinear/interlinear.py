@@ -175,14 +175,19 @@ def bible_main(book, chapter, verse,
                ):
     if format not in CONVERTERS:
         raise ValueError("Format %s not supported" % format)
+    if not book:
+        raise ValueError("Book must be specified")
     book = NORMALISED_NAMES.get(book, book)
-    chapters = (chapter_range(chapter)
-                if "-" in chapter
-                else [int(chapter)])
     versions = [
         TextCollection(os.path.expandvars("$BIBLE/%s.org" % VERSION_FILES[version.lower()]), version)
         for version in language
     ]
+    chapters = ((chapter_range(chapter)
+                 if "-" in chapter
+                 else [int(chapter)])
+                if chapter
+                else list(range(1, len(versions[0][book])+1)))
+    print("chapters are", chapters)
 
     texts = interlinear_chapters(versions, book, chapters)
 
