@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import sys
 
 from expressionive.expressionive import htmltags as T
 import expressionive.exprpages as exprpages
@@ -147,7 +148,7 @@ def chapters_interlinear_html(chapters):
 
 def interlinear_html(data, filename):
     """Output the text as HTML."""
-    with open(filename, 'w') as hstream:
+    with open(filename, 'w') if filename else sys.stdout as hstream:
         hstream.write(
             exprpages.page_text(
                 T.div(class_='bible')[
