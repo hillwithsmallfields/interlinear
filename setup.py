@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="interlinear",
-    version="0.0.1",
+    version="0.0.2",
     description="Interlinear text system",
     author="John C. G. Sturdy",
     author_email="jcg.sturdy@gmail.com",
